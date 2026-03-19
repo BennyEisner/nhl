@@ -1,0 +1,15 @@
+
+
+# raw data
+data/
+
+# env variables like API keys
+.env
+
+# Python cache
+__pycache__/
+
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
