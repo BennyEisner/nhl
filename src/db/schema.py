@@ -34,6 +34,7 @@ class TeamGameStats(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     game_id = Column(String, nullable=False)
+    season = Column(String, nullable=False)
     team = Column(String, nullable=False)
     is_home = Column(Boolean, nullable=False)
 
