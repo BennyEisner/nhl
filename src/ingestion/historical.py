@@ -76,7 +76,7 @@ def ingest_historical():
                 session.commit()
             logger.info(f"Season {season} committed successfully")
         except requests.HTTPError as e: 
-            logger.erro(f"HTTP error fetching season {season}: {e}")
+            logger.error(f"HTTP error fetching season {season}: {e}")
         except Exception as e: 
             logger.error(f"Unexpected error for season {season}: {e}")
             raise
