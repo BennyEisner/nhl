@@ -78,7 +78,7 @@ class MarketOdds(Base):
     game_id = Column(String, nullable=False)
     source = Column(String, nullable=False)
     home_prob = Column(Float)
-    home_prob = Column(Float)
+    away_prob = Column(Float)
     fetched_at = Column(DateTime, nullable=False)
 
 
