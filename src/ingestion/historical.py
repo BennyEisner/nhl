@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from src.db.schema import Game, TeamGameStats, engine
 from src.utils.config import HISTORICAL_SEASONS
-from src.utils.logging import get_logger
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
