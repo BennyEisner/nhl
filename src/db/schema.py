@@ -12,16 +12,15 @@ Base = declarative_base()
 class Game(Base):
     __tablename__ = "games"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    game_id = Column(String, nullable=False)
+    game_id = Column(String, primary_key=True)
 
     season = Column(String, nullable=False)
     date = Column(Date, nullable=False)
     home_team = Column(String, nullable=False)
     away_team = Column(String, nullable=False)
-    home_score = Column(Integer)
-    away_score = Column(Integer)
-    home_win = Column(Boolean)
+    home_score = Column(Integer, nullable=True)
+    away_score = Column(Integer, nullable=True)
+    home_win = Column(Boolean, nullable=True)
     went_to_ot = Column(Boolean, default=False)
 
     # prevent inserting same game twice
@@ -32,11 +31,10 @@ class Game(Base):
 class TeamGameStats(Base): 
     __tablename__ = "team_game_stats"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    game_id = Column(String, nullable=False)
+    game_id = Column(String, primary_key=True)
+    team = Column(String, primary_key = True)
     season = Column(String, nullable=False)
-    team = Column(String, nullable=False)
-    is_home = Column(Boolean, nullable=False)
+    is_home = Column(Boolean, nullable=True)
 
     goals_for = Column(Integer)
     goals_against = Column(Integer)
@@ -54,14 +52,12 @@ class TeamGameStats(Base):
 class Odds(Base):
     __tablename__ = "odds"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    game_id = Column(String, nullable=False)
-
-    bookmaker = Column(String, nullable=False)
+    game_id = Column(String, primary_key=True) 
+    bookmaker = Column(String, primary_key=True)
 
     # TODO: specify and name money line(s) 
-    home_ml_= Column(Integer)
-    away_ml_ = Column(Integer)
+    home_ml = Column(Integer)
+    away_ml = Column(Integer)
 
     home_implied_prob = Column(Float) # Convert american or other odds metrics to implied probability statistic
     away_implied_prob = Column(Float) 
@@ -75,9 +71,8 @@ class MarketOdds(Base):
     
     __tablename__ = "market_odds"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    game_id = Column(String, nullable=False)
-    source = Column(String, nullable=False)
+    game_id = Column(String, primary_key=True)
+    source = Column(String, primary_key=True)
     home_prob = Column(Float)
     away_prob = Column(Float)
     fetched_at = Column(DateTime, nullable=False)

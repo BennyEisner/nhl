@@ -9,14 +9,22 @@ from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+# API distinguishes between preseaosn regular season and playoffers by gametypes 1,2,3 respectively 
+REGULAR_SEASON = 2
 
 # NHL API client
 client = NHLClient()
 
 
+def _get_team_abbrevs() -> list[str]:
+    teams = client.teams.teams()
+    abbrevs = [t["abbr"] for t in teams]
+    logger.info(f"Found {len(abbrevs)} teams")
+    return abbrevs
+
 
 # Mpa raw API game dictory to my Game Object
-def _map_game(raw: dict, season: str) -> Game: 
+def _map_game(raw: dict) -> Game: 
     home = raw.get("homeTeam", {})
     away = raw.get("awayTeam", {})
     outcome = raw.get("gameOutcome", {})
@@ -33,7 +41,7 @@ def _map_game(raw: dict, season: str) -> Game:
 
     return Game(
         game_id = str(raw["id"]),
-        season = season, 
+        season = str(raw["season"]),
         date = datetime.strptime(raw["gameDate"], "%Y-%m-%d").date(),
         home_team = home.get("abbrev"),
         away_team= away.get("abbrev"),
@@ -45,29 +53,38 @@ def _map_game(raw: dict, season: str) -> Game:
 
 # Fetch and insert all games for a season
 def _ingest_season(season: str, session: Session): 
-    logger.info(f"Fetching NHL schedule for season {season}")
-    schedule = client.schedule.get_season_schedule(team_abbr=None, season=season)
-
-    games_raw = schedule if isinstance(schedule, list) else schedule.get("games", [])
-
-    inserted = 0
-    skipped = 0
-
-    for raw in games_raw: 
-        if raw.get("gameState") not in ("OFF", "FINAL"):
-            skipped += 1
+    team_abbrevs = _get_team_abbrevs()
+    games_by_id: dict[str, Game] = {}
+    for abbrev in team_abbrevs:
+        logger.info(f"Fetching schedule: {abbrev} {season}")
+        try: response = client.schedule.team_season_schedule(team_abbr = abbrev, season = season)
+        except Exception as e: 
+            logger.warning(f" Could not fetch schedule for {abbrev}: {e}")
             continue
-        
-        game_obj = _map_game(raw, season)
-        session.merge(game_obj)
-        inserted += 1
 
-    logger.info(f"Season {season}: {inserted} games merged, {skipped} future games skipped") 
+        raw_games = response.get("games", [])
+
+        for raw in raw_games: 
+            # non regular season games
+            if raw.get("gameType") != REGULAR_SEASON:
+                continue
+            # future games
+            if raw.get("gameState") not in ("OFF", "FINAL"):
+                continue
+            game_id = str(raw["id"])
+
+            if game_id not in games_by_id: 
+                games_by_id[game_id] = _map_game(raw)
+
+    for game in games_by_id.values():
+        session.merge(game)
+    
+
+    logger.info(f"Season {season}: {len(games_by_id)} unique games merged") 
 
 
 def ingest_nhl_stats():
     seasons = HISTORICAL_SEASONS + [CURRENT_SEASON]
-    seasons = list(dict.fromkeys(seasons)) # deduplicate inc ase current seaosn already in historical seasons
 
     for season in seasons: 
         try: 

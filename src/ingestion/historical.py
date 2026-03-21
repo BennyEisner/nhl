@@ -28,7 +28,15 @@ def _fetch_csv(season: str) -> pd.DataFrame:
     url = _build_url(season)
     logger.info(f"Fetching MoneyPuck data for season {season} from {url}")
 
-    response = requests.get(url, timeout=30)
+    # 403 with no headers so added header to avoid looking like a bot when fetching data
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+        )
+    }
+    response = requests.get(url, headers=headers, timeout=30)
     response.raise_for_status() # throws exception if HTTP status is 4xx or 5xx
 
     df = pd.read_csv(StringIO(response.text))
@@ -41,7 +49,7 @@ def _map_team_stats(row: pd.Series, season: str) -> TeamGameStats:
     return TeamGameStats(
         game_id = f"{season}_{row['team']}",
         team = str(row["team"]), 
-        seaosn = season, 
+        season = season, 
         is_home = None, # not tracked by moneypuck
         goals_for = int(row["goalsFor"]),
         goals_against = int(row["goalsAgainst"]),
@@ -58,10 +66,19 @@ def _insert_team_stats(df: pd.DataFrame, season: str, session: Session):
     df_all = df[df["situation"] == "all"].copy()
 
     inserted = 0
+    skipped = 0
+
     for _, row in df_all.iterrows():
         obj = _map_team_stats(row, season)
-        session.merge(obj)
-        inserted += 1
+        with Session(engine)as session: 
+            try: 
+                session.merge(obj)
+                session.commit()
+                inserted += 1
+            except IntegrityError: 
+                # For when row already exists we just skip it
+                session.rollback()
+                skipped +=1
 
     logger.info(f"Merged {inserted} team stat rows for season {season}")
 
