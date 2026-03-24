@@ -7,10 +7,12 @@ from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+
 def _read_sql(sql: str, params: dict = None) -> pd.DataFrame:
-    with engine.connect() as conn: 
+    with engine.connect() as conn:
         df = pd.read_sql(text(sql), conn, params=params)
     return df
+
 
 def get_games() -> pd.DataFrame:
     sql = """
@@ -29,11 +31,17 @@ def get_games() -> pd.DataFrame:
         ORDER BY date ASC
     """
     df = _read_sql(sql)
-   
-    df["date"] = pd.to_datetime(df["date"]).dt.date # date strings to Pyhton date objects
-    df["home_win"]  = df["home_win"].astype(int) # ensure it is 0 or 1 ant not converted to float
 
-    logger.info(f"Loaded {len(df)} completed games across {df['season'].nunique()} seasons")
+    df["date"] = pd.to_datetime(
+        df["date"]
+    ).dt.date  # date strings to Pyhton date objects
+    df["home_win"] = df["home_win"].astype(
+        int
+    )  # ensure it is 0 or 1 ant not converted to float
+
+    logger.info(
+        f"Loaded {len(df)} completed games across {df['season'].nunique()} seasons"
+    )
 
     return df
 
@@ -58,10 +66,13 @@ def get_team_stats() -> pd.DataFrame:
         ORDER BY season ASC, team ASC
     """
     df = _read_sql(sql)
-   
-    logger.info(f"Loaded team stats: {len(df)} rows ({df['season'].nunique()} seasons, {df['team'].nunique()} teams)")
+
+    logger.info(
+        f"Loaded team stats: {len(df)} rows ({df['season'].nunique()} seasons, {df['team'].nunique()} teams)"
+    )
 
     return df
+
 
 def get_games_for_team(team: str) -> pd.DataFrame:
     sql = """
@@ -109,6 +120,7 @@ def get_games_for_team(team: str) -> pd.DataFrame:
 
     return df
 
+
 def get_all_teams() -> list[str]:
     sql = """
         SELECT DISTINCT home_team AS team FROM games
@@ -121,8 +133,7 @@ def get_all_teams() -> list[str]:
     return df["team"].tolist()
 
 
-
-def get_consensus_odds() -> pd.DataFrame: 
+def get_consensus_odds() -> pd.DataFrame:
     sql = """
         SELECT
             game_id, 
@@ -132,13 +143,12 @@ def get_consensus_odds() -> pd.DataFrame:
         FROM odds
         GROUP BY game_id
     """
-    
+
     df = _read_sql(sql)
 
-    if len(df)==0:
+    if len(df) == 0:
         logger.warning("No odds data found")
-    else: 
+    else:
         logger.info(f"Loaded consensus odds for {len(df)} games")
-    
-    return df
 
+    return df
