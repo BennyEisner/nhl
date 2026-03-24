@@ -55,7 +55,7 @@ class Odds(Base):
     game_id = Column(String, primary_key=True) 
     bookmaker = Column(String, primary_key=True)
 
-    # TODO: specify and name money line(s) 
+    # TODO: specify and name money line(s) for different books 
     home_ml = Column(Integer)
     away_ml = Column(Integer)
 
